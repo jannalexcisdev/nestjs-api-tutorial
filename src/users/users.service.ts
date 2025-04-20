@@ -1,35 +1,36 @@
-import { Injectable } from '@nestjs/common';
-import { identity } from 'rxjs';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class UsersService {
   private users = [
     { 
-      id: '1', 
+      id: 1, 
       name: 'Alice', 
       email: 'alice@example.com', 
       role: 'Admin' 
     },
     { 
-      id: '2', 
+      id: 2, 
       name: 'Bob', 
       email: 'bob@example.com', 
       role: 'Engineer' 
     },
     { 
-      id: '3', 
+      id: 3, 
       name: 'Charlie', 
       email: 'charlie@example.com', 
       role: 'Intern' 
     },
     {
-      id: '4',
+      id: 4,
       name: 'Diana',
       email: 'diana@example.com',
       role: 'Engineer'
     },
     {
-      id: '5',
+      id: 5,
       name: 'Ethan',
       email: 'ethan@example.com',
       role: 'Admin'
@@ -38,30 +39,35 @@ export class UsersService {
 
   findAll(role?:'Intern' | 'Engineer' | 'Admin') {
     if (role) {
-      return this.users.filter(user => user.role === role)
+      const rolesArray = this.users.filter(user => user.role === role)
+      if (rolesArray.length === 0) throw new NotFoundException('User Role Found') 
+        return rolesArray
     }
     return this.users
   }
 
   findOne(id: number) {
-    const user = this.users.find(user => user.id === id.toString())
+    const user = this.users.find(user => user.id === id)
+
+    if (!user) throw new NotFoundException('User Not Found')
+
     return user
   }
 
-  create(user:{name:string, email:string, role:'Intern' | 'Engineer' | 'Admin'}) {
+  create(createUserDto:CreateUserDto) {
     const usersByHighestId =  [...this.users].sort((a, b) => Number(b.id) - Number(a.id))
     const newUser = {
-      id: (parseInt(usersByHighestId[0].id) + 1).toString(),
-      ...user
+      id: usersByHighestId[0].id + 1,
+      ...createUserDto
     }
     this.users.push(newUser)
     return newUser
   }
 
-  update(id:number, updatedUser: {name?:string, email?:string, role?:'Intern' | 'Engineer' | 'Admin'}) {
+  update(id:number, updateUserDto: UpdateUserDto) {
     this.users = this.users.map(user => {
-      if (user.id === id.toString()) {
-        return {...user, ...updatedUser}
+      if (user.id === id) {
+        return {...user, ...updateUserDto}
       }
       return user
     })
@@ -70,15 +76,8 @@ export class UsersService {
 
   delete(id:number) {
     const removedUser = this.findOne(id)
-    this.users = this.users.filter(user => user.id !== id.toString())
+    this.users = this.users.filter(user => user.id !== id)
 
     return removedUser
-    // this.users = this,this.users.map(user => {
-    //   if (user.id === id) {
-    //     this.users.pop(id)
-    //     return('user removed')
-    //   }
-    //   return ('no existing user')
-    // })
   }
 }
